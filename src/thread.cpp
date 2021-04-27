@@ -1,7 +1,6 @@
 #include "../h/thread.h"
-#include "../h/ttools.h"
-
-extern volatile unsigned lockFlag;
+#include "../h/PCB.h"
+#include "../h/shared.h"
 
 ID Thread::getId(){
     return this->myPCB->id;
@@ -14,51 +13,51 @@ Thread::Thread(StackSize stackSize, Time timeSlice){
 }
 
 Thread::~Thread(){
-    lista->removeAtPCB(this->getId());
+    Shared::lista->removeAtPCB(this->getId());
 }
 
 void Thread::waitToComplete(){
-    lockFlag = 0;
+    Shared::lockFlag = 0;
     if (!this->myPCB->zavrsio){
         this->myPCB->waitList->putNext((PCB*)PCB::running);
         PCB::running->blokirana = 1;
-        cout<<"Blokirana: " << (void*)PCB::running << "\n";
+        //cout<<"Blokirana: " << (void*)PCB::running << "\n";
     }
-    lockFlag = 1;
+    Shared::lockFlag = 1;
     dispatch();
 }
 
 void Thread::start(){
     if(this->myPCB->startovana == 1)
         return;
-    lockFlag = 0; //provei da li treba lock ili moze ovako
+    Shared::lockFlag = 0; //provei da li treba lock ili moze ovako
     PCB::createProcess(this->myPCB);
     this->myPCB->startovana = 1;
     Scheduler::put(this->myPCB);
-    lockFlag = 1;
+    Shared::lockFlag = 1;
 }
 
 class T1:public Thread{
 public:
     T1():Thread(1100,1){
-      //cout<<"Napravio sam Thread1\n";
     }
     void run(){
         for(int i = 0;i<10;i++){
-            lockFlag = 0;
-            cout<<"Thread --- 1 ---\n";
-            lockFlag = 1;
-            for(int k = 0;k<9000;k++){
-                for(int j = 0;j<3600;j++){
+            Shared::lockFlag = 0;
+            cout<<"Thread --- 1 ---" << i << "\n";
+            Shared::lockFlag = 1;
+            for(int k = 0;k<3000;k++){
+                for(int j = 0;j<300;j++){
 
                 }
             }
         }
-        lockFlag = 0;
+        Shared::lockFlag = 0;
             cout<<"Thread 1 gotov\n";
-        lockFlag = 1;
+        Shared::lockFlag = 1;
     }
 };
+
 class T2:public Thread{
 public:
     T2():Thread(500,1){
@@ -66,18 +65,18 @@ public:
     }
     void run(){
         for(int i = 0;i<100;i++){
-            lockFlag = 0;
+            Shared::lockFlag = 0;
             cout<<"Thread --- 2 ---" << i << "\n";
-            lockFlag = 1;
-            for(int k = 0;k<8000;k++){
-                for(int j = 0;j<3000;j++){
+            Shared::lockFlag = 1;
+            for(int k = 0;k<1000;k++){
+                for(int j = 0;j<1000;j++){
 
                 }
             }
         }  
-        lockFlag = 0;
+        Shared::lockFlag = 0;
             cout<<"Thread 2 gotov\n";
-        lockFlag = 1;
+        Shared::lockFlag = 1;
     }
 };
 class T3:public Thread{
@@ -87,18 +86,18 @@ public:
     }
     void run(){
         for(int i = 0;i<10;i++){
-            lockFlag = 0;
+            Shared::lockFlag = 0;
             cout<<"Thread --- 3 ---\n";
-            lockFlag = 1;
+            Shared::lockFlag = 1;
             for(int k = 0;k<3000;k++){
-                for(int j = 0;j<3000;j++){
+                for(int j = 0;j<300;j++){
 
                 }
             }
         }
-        lockFlag = 0;
+        Shared::lockFlag = 0;
             cout<<"Thread 3 gotov\n";
-        lockFlag = 1;
+        Shared::lockFlag = 1;
     }
 };
 

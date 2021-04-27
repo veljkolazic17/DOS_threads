@@ -1,0 +1,10 @@
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+c:\src\thread.cpp:
+Warning C:\h\dThread.h 10: Functions containing while are not expanded inline
+Warning ../h/ttools.h 134: 'temp' is assigned a value that is never used in function List::removeAtPCB(int) volatile
+Warning c:\src\thread.cpp 47: Functions containing for are not expanded inline
+Warning c:\src\thread.cpp 68: Functions containing for are not expanded inline
+Warning c:\src\thread.cpp 89: Functions containing for are not expanded inline
+Turbo Link  Version 5.1 Copyright (c) 1992 Borland International
+
+	Available memory 4019448

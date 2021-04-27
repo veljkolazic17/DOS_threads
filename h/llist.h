@@ -2,8 +2,7 @@
 #define _LLIST_H_
 #include<iostream.h>//javlja gresku zbog iostreama i dosa
 #include<stdlib.h>
-
-extern volatile unsigned int lockFlag;//lockovanje zone bez ukidanja prekida
+#include "shared.h"
 
 class List{
 public:
@@ -91,6 +90,10 @@ public:
       return NULL;
     return current->data;
   }
-  unsigned removeAtPCB(ID id) volatile;
+
+  //U ovim slucajevima ovde unigned int je ID koji je typedefovan u zaglavlju thread.h koje se ovde ne uvozi
+  unsigned removeAtPCB(unsigned int id) volatile;
+
+  unsigned removeAtSem(unsigned int id) volatile;
 };
 #endif
