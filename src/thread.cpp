@@ -68,8 +68,8 @@ public:
             Shared::lockFlag = 0;
             cout<<"Thread --- 2 ---" << i << "\n";
             Shared::lockFlag = 1;
-            for(int k = 0;k<1000;k++){
-                for(int j = 0;j<1000;j++){
+            for(int k = 0;k<3000;k++){
+                for(int j = 0;j<3000;j++){
 
                 }
             }
@@ -123,7 +123,7 @@ int main(){
     }
 
     
-    t2->waitToComplete();
+    //t2->waitToComplete();
     t3->waitToComplete();
     t1->waitToComplete();
     //delay(100000);

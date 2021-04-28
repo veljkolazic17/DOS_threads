@@ -33,7 +33,7 @@ public:
   void putNext(void* data) volatile{
       if(length == 0){
         first = new Node(data);
-        current = first;
+        //current = first;
         last = first;
         first->last = NULL;
         first->next = NULL;
@@ -50,7 +50,7 @@ public:
   void putBack(void* data) volatile{
       if(length == 0){
         first = new Node(data);
-        current = first;
+        //current = first;
         last = first;
         first->last = NULL;
         first->next = NULL;
@@ -66,34 +66,12 @@ public:
       }
       length++;
   }
-  void* iterateNext(){
-    if(current != NULL){
-      void* dtemp = current->data;
-      current = current->next;
-      return dtemp;
-    }
-    return NULL;
-  }
-  void* iterateBack(){
-    if(current != NULL){
-      void* dtemp = current->data;
-      current = current->last;
-      return dtemp;
-    }
-    return NULL;
-  }
-  void iteratorReset(){
-    current = first;
-  }
-  void* currentData(){
-    if(current == NULL)
-      return NULL;
-    return current->data;
-  }
-
+  
   //U ovim slucajevima ovde unigned int je ID koji je typedefovan u zaglavlju thread.h koje se ovde ne uvozi
   unsigned removeAtPCB(unsigned int id) volatile;
 
   unsigned removeAtSem(unsigned int id) volatile;
+
+  friend class Iterator;
 };
 #endif

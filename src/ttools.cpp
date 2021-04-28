@@ -1,5 +1,7 @@
 #include "../h/PCB.h"
 #include "../h/shared.h"
+#include "../h/ksem.h"
+
 
 unsigned tsp;
 unsigned tss;
@@ -61,7 +63,7 @@ void interrupt timer(){	// prekidna rutina
 		}
 	}
 
-	//KernelSem::tickSemaphore();
+	KernelSem::tickSemaphore();
 
 	if(!Shared::zahtevana_promena_konteksta) asm int 60h;
 	Shared::zahtevana_promena_konteksta = 0;

@@ -1,5 +1,6 @@
 #include "../h/PCB.h"
 #include "../h/shared.h"
+#include "../h/iterator.h"
 
 volatile PCB* PCB::defaultPCB = 0;
 volatile PCB* PCB::running = 0;
@@ -65,9 +66,10 @@ void PCB::initDefault(){
 
 void PCB::exitThread(){
 		Shared::lockFlag = 0;
+		Iterator* iterator = new Iterator(PCB::running->waitList);
 		PCB::running->zavrsio = 1;
 		PCB* dtemp;
-		while((dtemp = (PCB*)PCB::running->waitList->iterateNext())!=NULL){
+		while((dtemp = (PCB*)iterator->iterateNext())!=NULL){
 			dtemp->blokirana = 0;
 			if(dtemp->zavrsio == 0){
 				Scheduler::put(dtemp);
