@@ -25,16 +25,18 @@ unsigned List::removeAtPCB(unsigned int id) volatile{//moralo je ovde da ne bi d
     while(iter != 0){
       PCB* tdata = (PCB*)(iter->data);
       if(tdata->myThread->getId() == id){
-		if(current == iter)
-		{
-			if(current->next!=NULL)
-				current = current->next;
-			else
-				current = current->last;
-		}
         Node* temp = iter;
-        last->next = iter->next;
-        last->next->last = last;
+		if(iter == first){
+			first = iter->next;
+		}
+		else if(iter == last){
+			last = iter->last;
+		}
+		else{
+			temp = iter->last;
+			iter->last->next = iter->next;
+			iter->next->last = iter->last;
+		}
         delete iter;
         return 1;
       } 

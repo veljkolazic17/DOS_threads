@@ -1,6 +1,10 @@
 #include "../h/thread.h"
 #include "../h/PCB.h"
 #include "../h/shared.h"
+#include "../h/semaphor.h"
+
+Semaphore* s1;
+
 
 ID Thread::getId(){
     return this->myPCB->id;
@@ -42,6 +46,7 @@ public:
     T1():Thread(1100,1){
     }
     void run(){
+        s1->wait(0);
         for(int i = 0;i<10;i++){
             Shared::lockFlag = 0;
             cout<<"Thread --- 1 ---" << i << "\n";
@@ -64,12 +69,12 @@ public:
       //cout<<"Napravio sam Thread2\n";
     }
     void run(){
-        for(int i = 0;i<100;i++){
+        for(int i = 0;i<40;i++){
             Shared::lockFlag = 0;
             cout<<"Thread --- 2 ---" << i << "\n";
             Shared::lockFlag = 1;
             for(int k = 0;k<3000;k++){
-                for(int j = 0;j<3000;j++){
+                for(int j = 0;j<100;j++){
 
                 }
             }
@@ -77,6 +82,7 @@ public:
         Shared::lockFlag = 0;
             cout<<"Thread 2 gotov\n";
         Shared::lockFlag = 1;
+        s1->signal();
     }
 };
 class T3:public Thread{
@@ -85,6 +91,10 @@ public:
       //cout<<"Napravio sam Thread3\n";
     }
     void run(){
+        
+        cout<<"Usao u thread 3";
+        
+        s1->wait(800);
         for(int i = 0;i<10;i++){
             Shared::lockFlag = 0;
             cout<<"Thread --- 3 ---\n";
@@ -93,6 +103,7 @@ public:
                 for(int j = 0;j<300;j++){
 
                 }
+                
             }
         }
         Shared::lockFlag = 0;
@@ -109,6 +120,10 @@ int main(){
     T2* t2 = new T2();
     T3* t3 = new T3();
     
+    
+    s1 = new Semaphore(0);
+
+
     t3->start();
     t2->start();
     t1->start();
@@ -123,7 +138,7 @@ int main(){
     }
 
     
-    //t2->waitToComplete();
+    t2->waitToComplete();
     t3->waitToComplete();
     t1->waitToComplete();
     //delay(100000);

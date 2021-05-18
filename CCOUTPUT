@@ -1,10 +1,21 @@
 Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+c:\src\iterator.cpp:
+c:\src\ksem.cpp:
+Warning C:\h\dThread.h 10: Functions containing while are not expanded inline
+Warning c:\src\ksem.cpp 28: 'temp' is assigned a value that is never used in function List::removeAtSem(unsigned int) volatile
+c:\src\pcb.cpp:
+Warning C:\h\dThread.h 10: Functions containing while are not expanded inline
+Warning c:\src\pcb.cpp 42: 'temp' is assigned a value that is never used in function List::removeAtPCB(unsigned int) volatile
+c:\src\semaphor.cpp:
+Warning C:\h\dThread.h 10: Functions containing while are not expanded inline
+c:\src\shared.cpp:
 c:\src\thread.cpp:
 Warning C:\h\dThread.h 10: Functions containing while are not expanded inline
-Warning ../h/ttools.h 134: 'temp' is assigned a value that is never used in function List::removeAtPCB(int) volatile
-Warning c:\src\thread.cpp 47: Functions containing for are not expanded inline
-Warning c:\src\thread.cpp 68: Functions containing for are not expanded inline
-Warning c:\src\thread.cpp 89: Functions containing for are not expanded inline
+Warning c:\src\thread.cpp 50: Functions containing for are not expanded inline
+Warning c:\src\thread.cpp 72: Functions containing for are not expanded inline
+Warning c:\src\thread.cpp 98: Functions containing for are not expanded inline
+c:\src\ttools.cpp:
+Warning C:\h\dThread.h 10: Functions containing while are not expanded inline
 Turbo Link  Version 5.1 Copyright (c) 1992 Borland International
 
-	Available memory 4019448
+	Available memory 4043344

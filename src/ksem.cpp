@@ -11,16 +11,18 @@ unsigned List::removeAtSem(unsigned int id) volatile{//moralo je ovde da ne bi d
     while(iter != 0){
       KernelSem* tdata = (KernelSem*)(iter->data);
       if(tdata->id == id){
-		if(current == iter)
-		{
-			if(current->next!=NULL)
-				current = current->next;
-			else
-				current = current->last;
-		}
         Node* temp = iter;
-        last->next = iter->next;
-        last->next->last = last;
+		if(iter == first){
+			first = iter->next;
+		}
+		else if(iter == last){
+			last = iter->last;
+		}
+		else{
+			temp = iter->last;
+			iter->last->next = iter->next;
+			iter->next->last = iter->last;
+		}
         delete iter;
         return 1;
       } 
@@ -31,6 +33,7 @@ unsigned List::removeAtSem(unsigned int id) volatile{//moralo je ovde da ne bi d
 
 void KernelSem::block(unsigned int time){
     lock
+    cout<<"BLokirao sam kurac semafor";
     this->blokirane->putNext((PCB*)PCB::running);
     PCB::running->blokirana = 1;
     PCB::running->waitTime=time;
@@ -48,6 +51,7 @@ void KernelSem::unblock(){
     pcbCur->blokirana = 0;
     pcbCur->returnValue=1;
     pcbCur->waitTime=0;
+    Scheduler::put(pcbCur);
     unlock
     dispatch();
 }
@@ -60,6 +64,7 @@ void KernelSem::unblockSelected(PCB* pcbCur){
     this->blokirane->removeAtPCB(pcbCur->id);
     pcbCur->blokirana = 0;
     pcbCur->returnValue=-1;
+    Scheduler::put(pcbCur);
     unlock
     dispatch();
 }
@@ -85,12 +90,14 @@ KernelSem::~KernelSem(){
 
 void KernelSem::tickSemaphore(){
     Iterator* iterator = new Iterator(KernelSem::KernelSemList);
-    Iterator* iterator2 = new Iterator(KernelSem::KernelSemList);
+    Iterator* iterator2 = NULL;
     KernelSem* iter = NULL;
     while((iter = (KernelSem*)iterator->iterateNext()) != NULL){
+        iterator2 = new Iterator(iter->blokirane);
         PCB* iter2=NULL;
         iterator2->iteratorReset();
         while((iter2=(PCB*)iterator2->iterateNext()) != NULL){
+            if(iter2->waitTime==0)continue;
             if(--(iter2->waitTime)==0){
                 iter->unblockSelected(iter2);
             }
