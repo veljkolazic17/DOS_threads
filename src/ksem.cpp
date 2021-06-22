@@ -4,7 +4,7 @@
 #include "../h/ksem.h"
 
 List* KernelSem::KernelSemList = new List();
-
+ID KernelSem::idS = 0;
 
 unsigned List::removeAtSem(unsigned int id) volatile{//moralo je ovde da ne bi doslo do problema oko h fajlova
     Node* iter = first;
@@ -17,6 +17,7 @@ unsigned List::removeAtSem(unsigned int id) volatile{//moralo je ovde da ne bi d
 		}
 		else if(iter == last){
 			last = iter->last;
+            last->next = NULL;
 		}
 		else{
 			temp = iter->last;
@@ -24,6 +25,7 @@ unsigned List::removeAtSem(unsigned int id) volatile{//moralo je ovde da ne bi d
 			iter->next->last = iter->last;
 		}
         delete iter;
+        this->length--;
         return 1;
       } 
       iter = iter->next;
@@ -33,10 +35,9 @@ unsigned List::removeAtSem(unsigned int id) volatile{//moralo je ovde da ne bi d
 
 void KernelSem::block(unsigned int time){
     lock
-    cout<<"BLokirao sam kurac semafor";
-    this->blokirane->putNext((PCB*)PCB::running);
     PCB::running->blokirana = 1;
-    PCB::running->waitTime=time;
+    PCB::running->waitTime=time/55;
+    this->blokirane->putNext((PCB*)PCB::running);
     unlock
     dispatch();
 }
@@ -59,12 +60,13 @@ void KernelSem::unblock(){
 void KernelSem::unblockSelected(PCB* pcbCur){
     lock
     if(this->blokirane->first == NULL)
-        return;
+      return;
     
     this->blokirane->removeAtPCB(pcbCur->id);
     pcbCur->blokirana = 0;
     pcbCur->returnValue=-1;
-    Scheduler::put(pcbCur);
+    pcbCur->waitTime=0;
+    Scheduler::put((PCB*)pcbCur);
     unlock
     dispatch();
 }
@@ -89,21 +91,16 @@ KernelSem::~KernelSem(){
 }
 
 void KernelSem::tickSemaphore(){
-    Iterator* iterator = new Iterator(KernelSem::KernelSemList);
-    Iterator* iterator2 = NULL;
-    KernelSem* iter = NULL;
-    while((iter = (KernelSem*)iterator->iterateNext()) != NULL){
-        iterator2 = new Iterator(iter->blokirane);
-        PCB* iter2=NULL;
-        iterator2->iteratorReset();
-        while((iter2=(PCB*)iterator2->iterateNext()) != NULL){
-            if(iter2->waitTime==0)continue;
-            if(--(iter2->waitTime)==0){
-                iter->unblockSelected(iter2);
+    Iterator* semaphore_iterator = new Iterator(KernelSem::KernelSemList);
+    KernelSem* semaphore = NULL;
+    while((semaphore = (KernelSem*)semaphore_iterator->iterateNext())!= NULL){
+        PCB* pcb = NULL;
+        Iterator* pcb_iterator = new Iterator(semaphore->blokirane);
+        while((pcb = (PCB*)pcb_iterator->iterateNext())!=NULL){
+            if(pcb->waitTime == 0)continue;
+            if(--(pcb->waitTime)==0){
+                semaphore->unblockSelected(pcb);
             }
         }
-    }
-
-
-
+    }  
 }

@@ -14,13 +14,26 @@ void initDefaultWrapper(){
 }
 
 void interrupt timer(){	// prekidna rutina
-	if (!Shared::zahtevana_promena_konteksta) Shared::brojac--;
-	if (Shared::brojac == 0 || Shared::zahtevana_promena_konteksta) {
+	KernelSem::tickSemaphore();	
+
+	if(!Shared::zahtevana_promena_konteksta && PCB::running->neograniceno == 1){
+		return;
+	}
+	else if (!Shared::zahtevana_promena_konteksta && PCB::running->neograniceno == 0){
+		PCB::running->brojac--;
+	}
+
+	//RADI PROMENU KONTEKSTA
+	if (PCB::running->brojac == 0 || Shared::zahtevana_promena_konteksta) {
 		if(Shared::lockFlag == 0){
 			Shared::zahtevana_promena_konteksta = 1;
 			return;
 		}
 		Shared::zahtevana_promena_konteksta = 0;
+		//TODO treba proveriti da li treba svaki put kad se radi dispatch da se menja kontekst
+		if(PCB::running->brojac == 0){
+			PCB::running->brojac = PCB::running->kvant/55;
+		}
 		asm {
 			// cuva sp
 			mov tsp, sp
@@ -63,8 +76,8 @@ void interrupt timer(){	// prekidna rutina
 		}
 	}
 
-	KernelSem::tickSemaphore();
-
+	
+	
 	if(!Shared::zahtevana_promena_konteksta) asm int 60h;
 	Shared::zahtevana_promena_konteksta = 0;
 }

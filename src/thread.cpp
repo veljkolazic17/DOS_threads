@@ -25,7 +25,6 @@ void Thread::waitToComplete(){
     if (!this->myPCB->zavrsio){
         this->myPCB->waitList->putNext((PCB*)PCB::running);
         PCB::running->blokirana = 1;
-        //cout<<"Blokirana: " << (void*)PCB::running << "\n";
     }
     Shared::lockFlag = 1;
     dispatch();
@@ -60,6 +59,7 @@ public:
         Shared::lockFlag = 0;
             cout<<"Thread 1 gotov\n";
         Shared::lockFlag = 1;
+        
     }
 };
 
@@ -73,8 +73,8 @@ public:
             Shared::lockFlag = 0;
             cout<<"Thread --- 2 ---" << i << "\n";
             Shared::lockFlag = 1;
-            for(int k = 0;k<3000;k++){
-                for(int j = 0;j<100;j++){
+            for(int k = 0;k<9000;k++){
+                for(int j = 0;j<3000;j++){
 
                 }
             }
@@ -92,9 +92,9 @@ public:
     }
     void run(){
         
-        cout<<"Usao u thread 3";
+        cout<<"Usao u thread 3\n";
         
-        s1->wait(800);
+        s1->wait(10000);
         for(int i = 0;i<10;i++){
             Shared::lockFlag = 0;
             cout<<"Thread --- 3 ---\n";
@@ -119,9 +119,10 @@ int main(){
     T1* t1 = new T1();
     T2* t2 = new T2();
     T3* t3 = new T3();
-    
+    Semaphore* s2;
     
     s1 = new Semaphore(0);
+    
 
 
     t3->start();
@@ -136,7 +137,7 @@ int main(){
             delay(1000);
             
     }
-
+    
     
     t2->waitToComplete();
     t3->waitToComplete();

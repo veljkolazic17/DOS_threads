@@ -8,12 +8,15 @@
 
 class KernelSem{
 public:
+    static ID idS;
     int value;
     List* blokirane;
     ID id;
     static List* KernelSemList;
 
     KernelSem(int value){
+        KernelSem::idS++;
+        this->id = KernelSem::idS;
         this->value = value;
         blokirane = new List(); 
         KernelSemList->putNext(this);

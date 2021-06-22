@@ -2,14 +2,17 @@
 #include "../h/shared.h"
 #include "../h/iterator.h"
 
+//inicijalizacija statickih
 volatile PCB* PCB::defaultPCB = 0;
 volatile PCB* PCB::running = 0;
 volatile PCB* PCB::mainPCB = 0;
+ID PCB::idS = 0;
 
 PCB::PCB(StackSize stackSize, Time timeSlice,Thread* myThread){
 		this->startovana=0;
 		this->stackSize = stackSize;
 		this->kvant = timeSlice*55;
+
 		Shared::lockFlag = 0;
 		Shared::lista->putNext(this);
 		Shared::lockFlag = 1;
@@ -17,6 +20,17 @@ PCB::PCB(StackSize stackSize, Time timeSlice,Thread* myThread){
 		waitList = new List();
 		waitTime=0;
 		returnValue=0;
+
+		//PROVERA DA LI JE U PITANJU NEOGRANICENI REZIM
+		if(timeSlice == 0){
+			this->neograniceno = 1;
+		}
+		else{
+			
+			this->neograniceno = 0;
+		}
+		this->brojac = timeSlice;
+		
 	}
 
 //Pazi ovde da se ne zajebes koristio si unsigned int a ne ID sto je isto al pazi 
@@ -24,13 +38,14 @@ unsigned List::removeAtPCB(unsigned int id) volatile{//moralo je ovde da ne bi d
     Node* iter = first;
     while(iter != 0){
       PCB* tdata = (PCB*)(iter->data);
-      if(tdata->myThread->getId() == id){
+      if(tdata->id == id){
         Node* temp = iter;
 		if(iter == first){
 			first = iter->next;
 		}
 		else if(iter == last){
 			last = iter->last;
+			last->next = NULL;
 		}
 		else{
 			temp = iter->last;
@@ -38,6 +53,7 @@ unsigned List::removeAtPCB(unsigned int id) volatile{//moralo je ovde da ne bi d
 			iter->next->last = iter->last;
 		}
         delete iter;
+		this->length--;
         return 1;
       } 
       iter = iter->next;
@@ -70,13 +86,14 @@ void PCB::exitThread(){
 		Shared::lockFlag = 0;
 		Iterator* iterator = new Iterator(PCB::running->waitList);
 		PCB::running->zavrsio = 1;
+		PCB::running->neograniceno = 0;
 		PCB* dtemp;
 		while((dtemp = (PCB*)iterator->iterateNext())!=NULL){
 			dtemp->blokirana = 0;
 			if(dtemp->zavrsio == 0){
 				Scheduler::put(dtemp);
 			}
-		}
+		}		
 		Shared::lockFlag = 1;
 		dispatch();
 }	
