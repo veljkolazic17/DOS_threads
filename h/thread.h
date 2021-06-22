@@ -23,7 +23,7 @@ protected:
     friend class PCB;
     Thread (StackSize stackSize = defaultStackSize, Time timeSlice = defaultTimeSlice);
     virtual void run() {}
-private:
+private: 
     PCB* myPCB;
 };
 

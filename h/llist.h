@@ -2,8 +2,7 @@
 #define _LLIST_H_
 #include<iostream.h>//javlja gresku zbog iostreama i dosa
 #include<stdlib.h>
-
-extern volatile unsigned int lockFlag;//lockovanje zone bez ukidanja prekida
+#include "shared.h"
 
 class List{
 public:
@@ -34,7 +33,7 @@ public:
   void putNext(void* data) volatile{
       if(length == 0){
         first = new Node(data);
-        current = first;
+        //current = first;
         last = first;
         first->last = NULL;
         first->next = NULL;
@@ -51,7 +50,7 @@ public:
   void putBack(void* data) volatile{
       if(length == 0){
         first = new Node(data);
-        current = first;
+        //current = first;
         last = first;
         first->last = NULL;
         first->next = NULL;
@@ -67,30 +66,12 @@ public:
       }
       length++;
   }
-  void* iterateNext(){
-    if(current != NULL){
-      void* dtemp = current->data;
-      current = current->next;
-      return dtemp;
-    }
-    return NULL;
-  }
-  void* iterateBack(){
-    if(current != NULL){
-      void* dtemp = current->data;
-      current = current->last;
-      return dtemp;
-    }
-    return NULL;
-  }
-  void iteratorReset(){
-    current = first;
-  }
-  void* currentData(){
-    if(current == NULL)
-      return NULL;
-    return current->data;
-  }
-  unsigned removeAtPCB(ID id) volatile;
+  
+  //U ovim slucajevima ovde unigned int je ID koji je typedefovan u zaglavlju thread.h koje se ovde ne uvozi
+  unsigned removeAtPCB(unsigned int id) volatile;
+
+  unsigned removeAtSem(unsigned int id) volatile;
+
+  friend class Iterator;
 };
 #endif
