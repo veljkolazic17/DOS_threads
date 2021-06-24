@@ -9,13 +9,14 @@ volatile PCB* PCB::mainPCB = 0;
 ID PCB::idS = 0;
 
 PCB::PCB(StackSize stackSize, Time timeSlice,Thread* myThread){
+		this->id = PCB::idS++;
 		this->startovana=0;
+		if(stackSize > 65535){
+			stackSize = 65535;
+		}
 		this->stackSize = stackSize;
 		this->kvant = timeSlice*55;
 
-		Shared::lockFlag = 0;
-		Shared::lista->putNext(this);
-		Shared::lockFlag = 1;
 		this->myThread = myThread;
 		waitList = new List();
 		waitTime=0;
@@ -42,6 +43,7 @@ unsigned List::removeAtPCB(unsigned int id) volatile{//moralo je ovde da ne bi d
         Node* temp = iter;
 		if(iter == first){
 			first = iter->next;
+			first->last = NULL;
 		}
 		else if(iter == last){
 			last = iter->last;
@@ -65,25 +67,19 @@ void PCB::initDefault(){
     Shared::zahtevana_promena_konteksta = 0;
     if(PCB::defaultPCB != 0)
 		return;
-		Shared::lockFlag = 0;
 		Shared::defaultThread = new DefaultThread();
 		Shared::lista = new List();
-		//lockFlag = 0; ne mora lock
 		PCB::createProcess(Shared::defaultThread->myPCB);
-		//lockFlag = 1;
 		PCB::defaultPCB = Shared::defaultThread->myPCB;
 
 		mainPCB = new PCB(4096,2,0);
-		Shared::lista->putNext((PCB*)mainPCB);
 		mainPCB->zavrsio = 0;
 		mainPCB->blokirana = 0;
+		PCB::createProcess((PCB*)mainPCB);
 		PCB::running = mainPCB;
-		Shared::brojac = 1;
-		Shared::lockFlag = 1;
 }
 
 void PCB::exitThread(){
-		Shared::lockFlag = 0;
 		Iterator* iterator = new Iterator(PCB::running->waitList);
 		PCB::running->zavrsio = 1;
 		PCB::running->neograniceno = 0;
@@ -94,7 +90,6 @@ void PCB::exitThread(){
 				Scheduler::put(dtemp);
 			}
 		}		
-		Shared::lockFlag = 1;
 		dispatch();
 }	
 
@@ -102,12 +97,10 @@ void PCB::run(){
 	if(PCB::running->myThread){
 		PCB::running->myThread->run();
 		PCB::exitThread();  
-		dispatch();
 	}
 }
 
 void PCB::createProcess(PCB *newPCB){
-		Shared::lockFlag = 0;
 		unsigned stackSize=newPCB->stackSize;
 		stackSize/=sizeof(unsigned);
 		unsigned* st1 = new unsigned[stackSize];
@@ -116,10 +109,15 @@ void PCB::createProcess(PCB *newPCB){
 		st1[stackSize-2] = FP_SEG(PCB::run); //ovo je zbog huge memorijskog modela
 		st1[stackSize-3] = FP_OFF(PCB::run);
 
+		lock
 		newPCB->sp = FP_OFF(st1+stackSize-12); //svi sacuvani registri pri ulasku u interrupt rutinu
 		newPCB->ss = FP_SEG(st1+stackSize-12);
 		newPCB->bp = FP_OFF(st1+stackSize-12); //zasto je ovde +1012 ???
 		newPCB->zavrsio = 0;
 		newPCB->blokirana = 0;
-		Shared::lockFlag = 1;
-	}
+		unlock
+
+		lock
+		Shared::lista->putNext(newPCB);
+		unlock
+}

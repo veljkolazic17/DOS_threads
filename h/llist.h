@@ -33,7 +33,6 @@ public:
   void putNext(void* data) volatile{
       if(length == 0){
         first = new Node(data);
-        //current = first;
         last = first;
         first->last = NULL;
         first->next = NULL;

@@ -3,9 +3,7 @@
 #include "../h/ttools.h"
 
 Semaphore::Semaphore(int init){
-    lock
     this->myImpl = new KernelSem(init);
-    unlock
 }
 
 int Semaphore::val() const{

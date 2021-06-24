@@ -31,5 +31,8 @@ void inic();
 // vraca staru prekidnu rutinu
 void restore();
 
+//funkcije za lockovanje
+void lockf();
+void unlockf();
 
 #endif

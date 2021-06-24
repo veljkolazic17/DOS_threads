@@ -1,7 +1,8 @@
 #ifndef _KSEM_H_
 #define _KSEM_H_
-#include "thread.h"
-#include "llist.h"
+#include "../h/thread.h"
+#include "../h/llist.h"
+#include "../h/ttools.h"
 
 
 // treba negde da se inicijalizuje !!!
@@ -19,8 +20,9 @@ public:
         this->id = KernelSem::idS;
         this->value = value;
         blokirane = new List(); 
+        lockf();
         KernelSemList->putNext(this);
-        // kernel sem izvadi iz liste
+        unlockf();
     }
     
     int wait(Time time);

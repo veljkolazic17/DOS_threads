@@ -8,15 +8,15 @@ unsigned tss;
 unsigned tbp;
 
 void initDefaultWrapper(){
-	lock
 	PCB::initDefault();
-	unlock
 }
 
 void interrupt timer(){	// prekidna rutina
-	KernelSem::tickSemaphore();	
 
+	if(!Shared::zahtevana_promena_konteksta)
+		KernelSem::tickSemaphore();
 	if(!Shared::zahtevana_promena_konteksta && PCB::running->neograniceno == 1){
+		asm int 60h;
 		return;
 	}
 	else if (!Shared::zahtevana_promena_konteksta && PCB::running->neograniceno == 0){
@@ -25,10 +25,7 @@ void interrupt timer(){	// prekidna rutina
 
 	//RADI PROMENU KONTEKSTA
 	if (PCB::running->brojac == 0 || Shared::zahtevana_promena_konteksta) {
-		if(Shared::lockFlag == 0){
-			Shared::zahtevana_promena_konteksta = 1;
-			return;
-		}
+		if(Shared::lockFlag <= 0){
 		Shared::zahtevana_promena_konteksta = 0;
 		//TODO treba proveriti da li treba svaki put kad se radi dispatch da se menja kontekst
 		if(PCB::running->brojac == 0){
@@ -45,7 +42,7 @@ void interrupt timer(){	// prekidna rutina
 		PCB::running->ss = tss;
 		PCB::running->bp = tbp;
 
-		
+
 		if(!PCB::running->zavrsio && 
 		   !PCB::running->blokirana &&
 		   PCB::running!=PCB::defaultPCB){
@@ -54,11 +51,8 @@ void interrupt timer(){	// prekidna rutina
 		   }
 				
 		PCB::running= Scheduler::get();
-		//cout << "dobio: "<< PCB::running->ime <<(void*)PCB::running << endl;
-		
 
 		if(PCB::running == 0){
-			//cout << "blokirano sve" << endl;
 			PCB::running = PCB::defaultPCB;
 		}
 		
@@ -74,12 +68,13 @@ void interrupt timer(){	// prekidna rutina
 			mov ss, tss
 			mov bp,tbp //dodato
 		}
+	}else{
+		Shared::zahtevana_promena_konteksta = 1;
+	}
 	}
 
-	
-	
 	if(!Shared::zahtevana_promena_konteksta) asm int 60h;
-	Shared::zahtevana_promena_konteksta = 0;
+	
 }
 
 void dispatch(){ // sinhrona promena konteksta
@@ -139,5 +134,17 @@ void restore(){
 		pop ax
 		pop es
 		sti
+	}
+}
+
+//funkcije za lockovanje pomocu lockFlag-a
+void lockf(){
+	Shared::lockFlag++;
+}
+
+void unlockf(){
+	Shared::lockFlag--;
+	if(Shared::zahtevana_promena_konteksta && !Shared::lockFlag){
+		dispatch();
 	}
 }

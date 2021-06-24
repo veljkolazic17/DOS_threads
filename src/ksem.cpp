@@ -2,6 +2,7 @@
 #include "../h/PCB.h"
 #include "../h/iterator.h"
 #include "../h/ksem.h"
+#include<stdio.h>
 
 List* KernelSem::KernelSemList = new List();
 ID KernelSem::idS = 0;
@@ -34,54 +35,47 @@ unsigned List::removeAtSem(unsigned int id) volatile{//moralo je ovde da ne bi d
 }
 
 void KernelSem::block(unsigned int time){
-    lock
+    Shared::brojSemBlokiranih++;
     PCB::running->blokirana = 1;
-    PCB::running->waitTime=time/55;
+    PCB::running->waitTime=time;
     this->blokirane->putNext((PCB*)PCB::running);
-    unlock
+    //DOCS samo je ovde potreban dispatch posto se nit mora odmah blokirati
     dispatch();
 }
 
 void KernelSem::unblock(){
-    lock
     Iterator* iterator = new Iterator(this->blokirane);
-    if(this->blokirane->first == NULL)
-        return;
-    PCB* pcbCur = (PCB*)iterator->currentData();
-    this->blokirane->removeAtPCB(pcbCur->id);
-    pcbCur->blokirana = 0;
-    pcbCur->returnValue=1;
-    pcbCur->waitTime=0;
-    Scheduler::put(pcbCur);
-    unlock
-    dispatch();
+    PCB* pcbIter = (PCB*)iterator->currentData();
+    if(pcbIter == NULL) return; // dodato kao mnogo bitno
+    Shared::brojSemBlokiranih--;
+    this->blokirane->removeAtPCB(pcbIter->id);
+    pcbIter->blokirana = 0;
+    pcbIter->returnValue=1;
+    pcbIter->waitTime=0;
+    Scheduler::put(pcbIter);
 }
 
 void KernelSem::unblockSelected(PCB* pcbCur){
-    lock
-    if(this->blokirane->first == NULL)
-      return;
-    
+    Shared::brojSemBlokiranih--;
     this->blokirane->removeAtPCB(pcbCur->id);
     pcbCur->blokirana = 0;
-    pcbCur->returnValue=-1;
+    pcbCur->returnValue=0;
     pcbCur->waitTime=0;
+    //DOCS vraca kontekst ali kada to bude bilo potrebno
     Scheduler::put((PCB*)pcbCur);
-    unlock
-    dispatch();
 }
 
 int KernelSem::wait(unsigned int time){
-    lock
+    lockf();
     if(--(this->value) < 0) this->block(time);
-    unlock
+    unlockf();
     return PCB::running->returnValue;
 }
 
 void KernelSem::signal(){
-    lock
+    lockf();
     if(++(this->value) <= 0) this->unblock();
-    unlock
+    unlockf();
 }
 
 KernelSem::~KernelSem(){
@@ -91,6 +85,7 @@ KernelSem::~KernelSem(){
 }
 
 void KernelSem::tickSemaphore(){
+    //if(!Shared::brojSemBlokiranih) return;
     Iterator* semaphore_iterator = new Iterator(KernelSem::KernelSemList);
     KernelSem* semaphore = NULL;
     while((semaphore = (KernelSem*)semaphore_iterator->iterateNext())!= NULL){
@@ -100,7 +95,9 @@ void KernelSem::tickSemaphore(){
             if(pcb->waitTime == 0)continue;
             if(--(pcb->waitTime)==0){
                 semaphore->unblockSelected(pcb);
+                //pcb_iterator->iteratorReset(); //TODO OBAVEZNO PROVERI TREBA LI OVO OVDE DA STOJI
             }
+            cout<<pcb->id<<" "<<pcb->waitTime<<"\n";
         }
-    }  
+    }
 }
