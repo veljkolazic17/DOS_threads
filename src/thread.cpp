@@ -46,7 +46,10 @@ void Thread::waitToComplete(){
 void Thread::start(){
     if(this->myPCB->startovana == 1)
         return;
-    PCB::createProcess(this->myPCB);
+    int allocated = PCB::createProcess(this->myPCB);
+
+    if(allocated == -1) return;
+
     this->myPCB->startovana = 1;
     Scheduler::put(this->myPCB);
 }

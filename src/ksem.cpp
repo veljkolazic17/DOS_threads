@@ -35,7 +35,8 @@ unsigned List::removeAtSem(unsigned int id) volatile{//moralo je ovde da ne bi d
 }
 
 void KernelSem::block(unsigned int time){
-    Shared::brojSemBlokiranih++;
+	if(time > 0)
+		Shared::brojSemBlokiranih++;
     PCB::running->blokirana = 1;
     PCB::running->waitTime=time;
     this->blokirane->putNext((PCB*)PCB::running);
@@ -79,13 +80,17 @@ void KernelSem::signal(){
 }
 
 KernelSem::~KernelSem(){
-    lock
+    Iterator* semaphores = new Iterator(this->blokirane);
+    PCB* pcb = NULL;
+    while((pcb = (PCB*)semaphores->iterateNext()) != NULL){
+    	this->unblockSelected(pcb);
+    }
+
     KernelSem::KernelSemList->removeAtSem(this->id);
-    unlock
 }
 
 void KernelSem::tickSemaphore(){
-    //if(!Shared::brojSemBlokiranih) return;
+    if(!Shared::brojSemBlokiranih) return;
     Iterator* semaphore_iterator = new Iterator(KernelSem::KernelSemList);
     KernelSem* semaphore = NULL;
     while((semaphore = (KernelSem*)semaphore_iterator->iterateNext())!= NULL){
@@ -95,9 +100,7 @@ void KernelSem::tickSemaphore(){
             if(pcb->waitTime == 0)continue;
             if(--(pcb->waitTime)==0){
                 semaphore->unblockSelected(pcb);
-                //pcb_iterator->iteratorReset(); //TODO OBAVEZNO PROVERI TREBA LI OVO OVDE DA STOJI
             }
-            cout<<pcb->id<<" "<<pcb->waitTime<<"\n";
         }
     }
 }

@@ -11,7 +11,9 @@ int Semaphore::val() const{
 }
 
 Semaphore::~Semaphore(){
+	lock
     delete this->myImpl;
+	unlock
 }
 
 int Semaphore::wait(Time maxTime){

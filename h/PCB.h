@@ -42,7 +42,7 @@ public:
 
 	static void initDefault();
 
-	static void createProcess(PCB *newPCB);
+	static int createProcess(PCB *newPCB);
 
 	static void exitThread();
 };

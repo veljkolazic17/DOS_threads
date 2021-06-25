@@ -20,7 +20,7 @@ PCB::PCB(StackSize stackSize, Time timeSlice,Thread* myThread){
 		this->myThread = myThread;
 		waitList = new List();
 		waitTime=0;
-		returnValue=0;
+		returnValue=-1;
 
 		//PROVERA DA LI JE U PITANJU NEOGRANICENI REZIM
 		if(timeSlice == 0){
@@ -100,10 +100,13 @@ void PCB::run(){
 	}
 }
 
-void PCB::createProcess(PCB *newPCB){
+int PCB::createProcess(PCB *newPCB){
 		unsigned stackSize=newPCB->stackSize;
 		stackSize/=sizeof(unsigned);
 		unsigned* st1 = new unsigned[stackSize];
+
+		if(st1 == 0) return -1;
+
 		newPCB->stack =st1;
 		st1[stackSize-1] =0x200;//setovan I fleg u pocetnom PSW-u za nit
 		st1[stackSize-2] = FP_SEG(PCB::run); //ovo je zbog huge memorijskog modela
@@ -120,4 +123,5 @@ void PCB::createProcess(PCB *newPCB){
 		lock
 		Shared::lista->putNext(newPCB);
 		unlock
+		return 1;
 }
