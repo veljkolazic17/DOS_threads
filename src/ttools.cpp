@@ -1,23 +1,45 @@
 #include "../h/PCB.h"
 #include "../h/shared.h"
 #include "../h/ksem.h"
-
+#include "../h/llist.h"
 
 unsigned tsp;
 unsigned tss;
 unsigned tbp;
 
+extern void tick();
+
 void initDefaultWrapper(){
 	PCB::initDefault();
 }
 
+unsigned int handleErrors(char c){
+	if(c == '+'){
+		Shared::errorCount++;
+	}
+	else if(c == '-'){
+		if(Shared::errorCount >= 0){
+			Shared::errorCount--;
+		}
+	}
+	return Shared::errorCount;
+}
+
+
 void interrupt timer(){	// prekidna rutina
 
-	if(!Shared::zahtevana_promena_konteksta)
+
+
+	if(Shared::zahtevana_promena_konteksta == 0){
 		KernelSem::tickSemaphore();
+		tick();
+	}
+
 	if(!Shared::zahtevana_promena_konteksta && PCB::running->neograniceno == 1){
-		asm int 60h;
-		return;
+//		if(Shared::lockFlag <= 0){
+			asm int 60h;
+			return;
+//		}
 	}
 	else if (!Shared::zahtevana_promena_konteksta && PCB::running->neograniceno == 0){
 		PCB::running->brojac--;
@@ -28,9 +50,7 @@ void interrupt timer(){	// prekidna rutina
 		if(Shared::lockFlag <= 0){
 		Shared::zahtevana_promena_konteksta = 0;
 		//TODO treba proveriti da li treba svaki put kad se radi dispatch da se menja kontekst
-		if(PCB::running->brojac == 0){
-			PCB::running->brojac = PCB::running->kvant/55;
-		}
+
 		asm {
 			// cuva sp
 			mov tsp, sp
@@ -43,25 +63,31 @@ void interrupt timer(){	// prekidna rutina
 		PCB::running->bp = tbp;
 
 
-		if(!PCB::running->zavrsio && 
+		if(PCB::running && !PCB::running->zavrsio &&
 		   !PCB::running->blokirana &&
 		   PCB::running!=PCB::defaultPCB){
-			//cout << "dao: "<< PCB::running->ime <<(void*)PCB::running << endl;
-			Scheduler::put((PCB*)PCB::running); //mora da se kastuje zato sto je running volotile
+			Scheduler::put((PCB*)PCB::running); //mora da se kastuje zato sto je running volatile
 		   }
-				
+
+		/*
+		 * PROVERA DA LI JE DOSLO DO GRESKE PRILIKOM KREIRANJA
+		 */
+
+		if(!PCB::running){
+			handleErrors('-');
+		}
+
 		PCB::running= Scheduler::get();
 
 		if(PCB::running == 0){
 			PCB::running = PCB::defaultPCB;
 		}
-		
 
 		tsp = PCB::running->sp;
 		tss = PCB::running->ss;
 		tbp = PCB::running->bp;
 
-		Shared::brojac = PCB::running->kvant;
+		PCB::running->brojac = PCB::running->kvant;
 
 		asm {
 			mov sp, tsp   // restore sp
@@ -78,10 +104,10 @@ void interrupt timer(){	// prekidna rutina
 }
 
 void dispatch(){ // sinhrona promena konteksta
-	lock
+	locknest
 	Shared::zahtevana_promena_konteksta = 1;
 	timer();
-	unlock
+	unlocknest
 }
 
 unsigned oldTimerOFF, oldTimerSEG; // stara prekidna rutina
@@ -148,3 +174,6 @@ void unlockf(){
 		dispatch();
 	}
 }
+
+
+

@@ -3,7 +3,9 @@
 #include "../h/ttools.h"
 
 Semaphore::Semaphore(int init){
+	lockf();
     this->myImpl = new KernelSem(init);
+	unlockf();
 }
 
 int Semaphore::val() const{
@@ -11,9 +13,9 @@ int Semaphore::val() const{
 }
 
 Semaphore::~Semaphore(){
-	lock
+	lockf();
     delete this->myImpl;
-	unlock
+	unlockf();
 }
 
 int Semaphore::wait(Time maxTime){

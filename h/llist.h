@@ -3,6 +3,7 @@
 #include<iostream.h>//javlja gresku zbog iostreama i dosa
 #include<stdlib.h>
 #include "shared.h"
+#include "event.h"
 
 class List{
 public:
@@ -66,10 +67,26 @@ public:
       length++;
   }
   
+  void purge() volatile{
+	  Node* pok = first;
+	  while(pok != NULL){
+		  Node* temp = pok;
+		  pok = pok->next;
+		  delete temp;
+	  }
+	  first = NULL;
+	  length = 0;
+	  first = NULL;
+	  last = NULL;
+	  current = NULL;
+  }
+
   //U ovim slucajevima ovde unigned int je ID koji je typedefovan u zaglavlju thread.h koje se ovde ne uvozi
   unsigned removeAtPCB(unsigned int id) volatile;
 
   unsigned removeAtSem(unsigned int id) volatile;
+
+  unsigned removeAtIVT(IVTNo ivtNo) volatile;
 
   friend class Iterator;
 };

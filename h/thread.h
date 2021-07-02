@@ -19,10 +19,16 @@ public:
   static ID getRunningId();
   static Thread * getThreadById(ID id);
 
+  static ID fork();
+  static void exit();
+  static void waitForForkChildren();
+  virtual Thread* clone() const{};
+
+
 protected:
     friend class PCB;
     Thread (StackSize stackSize = defaultStackSize, Time timeSlice = defaultTimeSlice);
-    virtual void run() {}
+    virtual void run(){};
 private: 
     PCB* myPCB;
 };

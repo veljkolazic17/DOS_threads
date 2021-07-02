@@ -20,9 +20,7 @@ public:
         this->id = KernelSem::idS;
         this->value = value;
         blokirane = new List(); 
-        lockf();
         KernelSemList->putNext(this);
-        unlockf();
     }
     
     int wait(Time time);

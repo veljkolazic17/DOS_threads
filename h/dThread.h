@@ -7,10 +7,8 @@
 class DefaultThread:public Thread{
 public:
     DefaultThread():Thread(100,1){
-        
     }
     void run(){
-    	printf("IDLE\n");
         while(1){}
     }
 };

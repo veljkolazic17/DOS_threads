@@ -25,18 +25,25 @@ public:
 	unsigned zavrsio;
 	unsigned startovana;
 	unsigned neograniceno;
+	unsigned original;
+	char slept;
 
 	//BROJACI, FLAGOVI I LISTE
 	unsigned stackSize;
 	int brojac;
 	Thread* myThread;
 	List* waitList;
+	List* deca;
 	ID id;
 	int kvant;
 	unsigned waitTime;
 	int returnValue;
 
 	PCB(StackSize stackSize, Time timeSlice,Thread* myThread);
+	PCB();
+	~PCB();
+
+	static int copyPCB(PCB* rawPCB,PCB* oldPCB);
 
 	static void run();	//ovo je metoda wrapper
 

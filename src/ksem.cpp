@@ -15,6 +15,7 @@ unsigned List::removeAtSem(unsigned int id) volatile{//moralo je ovde da ne bi d
         Node* temp = iter;
 		if(iter == first){
 			first = iter->next;
+			first->last = NULL;
 		}
 		else if(iter == last){
 			last = iter->last;
@@ -47,13 +48,19 @@ void KernelSem::block(unsigned int time){
 void KernelSem::unblock(){
     Iterator* iterator = new Iterator(this->blokirane);
     PCB* pcbIter = (PCB*)iterator->currentData();
-    if(pcbIter == NULL) return; // dodato kao mnogo bitno
-    Shared::brojSemBlokiranih--;
+    if(pcbIter == NULL){delete iterator; return;} // dodato kao mnogo bitno
+    if(pcbIter->waitTime > 0)
+    	Shared::brojSemBlokiranih--;
     this->blokirane->removeAtPCB(pcbIter->id);
     pcbIter->blokirana = 0;
     pcbIter->returnValue=1;
     pcbIter->waitTime=0;
-    Scheduler::put(pcbIter);
+    delete iterator;
+    if(pcbIter->zavrsio == 0 && pcbIter != (PCB*)PCB::defaultPCB){
+    	//printf("KrenelSem::unblock() == %d\n",pcbIter->id);
+    	Scheduler::put(pcbIter);
+    }
+    //dispatch();
 }
 
 void KernelSem::unblockSelected(PCB* pcbCur){
@@ -63,12 +70,21 @@ void KernelSem::unblockSelected(PCB* pcbCur){
     pcbCur->returnValue=0;
     pcbCur->waitTime=0;
     //DOCS vraca kontekst ali kada to bude bilo potrebno
-    Scheduler::put((PCB*)pcbCur);
+    if((PCB*)pcbCur->zavrsio == 0 && (PCB*)pcbCur != PCB::defaultPCB){
+    		//printf("KernelSem::ublockSelected() == %d\n",pcbCur->id);
+        	Scheduler::put(pcbCur);
+    }
+    //TODO mislim da nema smisla da stoji ovde zato sto se ovo poziva u dispatchu
+    //dispatch();
 }
 
 int KernelSem::wait(unsigned int time){
     lockf();
     if(--(this->value) < 0) this->block(time);
+    else{
+    	unlockf();
+    	return -1;
+    }
     unlockf();
     return PCB::running->returnValue;
 }
@@ -83,14 +99,22 @@ KernelSem::~KernelSem(){
     Iterator* semaphores = new Iterator(this->blokirane);
     PCB* pcb = NULL;
     while((pcb = (PCB*)semaphores->iterateNext()) != NULL){
-    	this->unblockSelected(pcb);
-    }
+    	pcb->blokirana = 0;
+    	pcb->waitTime = 0;
+    	pcb->returnValue = 0;
 
+    	if(pcb->zavrsio == 0 && pcb!=(PCB*)PCB::defaultPCB){
+    		Scheduler::put(pcb);
+    	}
+    }
+    this->blokirane->purge();
+    delete semaphores;
+    delete this->blokirane;
     KernelSem::KernelSemList->removeAtSem(this->id);
 }
 
 void KernelSem::tickSemaphore(){
-    if(!Shared::brojSemBlokiranih) return;
+    if(Shared::brojSemBlokiranih<=0) return;
     Iterator* semaphore_iterator = new Iterator(KernelSem::KernelSemList);
     KernelSem* semaphore = NULL;
     while((semaphore = (KernelSem*)semaphore_iterator->iterateNext())!= NULL){
@@ -100,7 +124,11 @@ void KernelSem::tickSemaphore(){
             if(pcb->waitTime == 0)continue;
             if(--(pcb->waitTime)==0){
                 semaphore->unblockSelected(pcb);
+                //TODO pitanje da li ova linija dole treba da stoji vrv ne
+                //pcb_iterator->iteratorReset();
             }
         }
+        delete pcb_iterator;
     }
+    delete semaphore_iterator;
 }

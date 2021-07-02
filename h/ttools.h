@@ -3,13 +3,24 @@
 
 //pretpostavljeni memorijski model: huge
 
+#define PREPAREENTRY(ivtNo, old)\
+void interrupt froutine##ivtNo(...); \
+IVTEntry inter_entry##ivtNo(ivtNo, froutine##ivtNo); \
+void interrupt froutine##ivtNo(...) {\
+	inter_entry##ivtNo.signal_ivt();\
+	if (old == 1)\
+		inter_entry##ivtNo.intr_old();\
+}
+
+
+
 #include <iostream.h>
 #include <dos.h>
 #include "thread.h"
 #include "dThread.h"
 #include "SCHEDULE.H"
 #include "llist.h"
-
+#include "../h/IVTEntry.h"
 
 //pomocne promenljive za prekid tajmera
 
@@ -18,6 +29,12 @@
 
 // Dozvoljava prekide
 #define unlock asm sti
+
+//nestovani prekidi
+#define locknest asm pushf;\
+	asm cli;
+#define unlocknest asm popf;
+
 
 void initDefaultWrapper();
 
@@ -34,5 +51,8 @@ void restore();
 //funkcije za lockovanje
 void lockf();
 void unlockf();
+
+unsigned int handleErrors(char c);
+
 
 #endif
